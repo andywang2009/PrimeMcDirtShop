@@ -1,0 +1,323 @@
+# 泥土商店插件配置
+
+welcome:
+  enabled: true
+  title: "&6Prime Mc Dirt Shop"
+  subtitle: "&f挖掘泥土，打造你的财富！"
+  messages:
+    - "&a欢迎加入服务器，泥土就是你的第一桶金！"
+    - "&e使用 /dirtshop shop 打开默认商店，或挖泥土赚取泥土币。"
+    - "&b输入 /dirtshop market browse 查看玩家交易市场。"
+
+# 玩家挖掘下列方块时将获得泥土币，数量可自定义。
+dirt-currency:
+  fortune-bonus: true
+  values:
+    DIRT: 1
+    GRASS_BLOCK: 1
+    COARSE_DIRT: 1
+    ROOTED_DIRT: 2
+    PODZOL: 2
+    MUD: 2
+    MUDDY_MANGROVE_ROOTS: 3
+
+# 工具强化配置，默认会在玩家加入服务器时自动应用。
+tool-modifiers:
+  apply-on-join: true
+  items:
+    WOODEN_SHOVEL:
+      display-name: "&6开垦者木铲"
+      lore:
+        - "&7挖掘泥土时额外获得 25% 奖励"
+      enchantments:
+        EFFICIENCY: 1
+      durability-multiplier: 0.75
+    STONE_SHOVEL:
+      display-name: "&6拓荒者石铲"
+      lore:
+        - "&7稳定的入门工具"
+      enchantments:
+        EFFICIENCY: 2
+      durability-multiplier: 0.7
+    IRON_SHOVEL:
+      display-name: "&6勤劳铁铲"
+      lore:
+        - "&7采集泥土时可享受高速奖励"
+      enchantments:
+        EFFICIENCY: 3
+      durability-multiplier: 0.6
+    DIAMOND_SHOVEL:
+      display-name: "&b尊贵钻石铲"
+      lore:
+        - "&7泥土币收益 +50%（脚本可进一步扩展）"
+      enchantments:
+        EFFICIENCY: 4
+        UNBREAKING: 2
+      durability-multiplier: 0.5
+    NETHERITE_SHOVEL:
+      display-name: "&d君主下令铲"
+      lore:
+        - "&7传奇工具：几乎不会损坏"
+      enchantments:
+        EFFICIENCY: 5
+        UNBREAKING: 3
+      durability-multiplier: 0.25
+      unbreakable: false
+    IRON_PICKAXE:
+      display-name: "&6泥土商店认证镐"
+      lore:
+        - "&7矿物类商品在商店中更具价值"
+      enchantments:
+        EFFICIENCY: 2
+      durability-multiplier: 0.7
+    DIAMOND_AXE:
+      display-name: "&b伐木勇士之斧"
+      lore:
+        - "&7砍树时提高木材收购效率"
+      enchantments:
+        EFFICIENCY: 4
+      durability-multiplier: 0.6
+    SHEARS:
+      display-name: "&a柔顺羊毛剪"
+      lore:
+        - "&7采集羊毛不再损坏工具"
+      unbreakable: true
+      durability-multiplier: 0.0
+
+# 默认商店出售的物品，覆盖了大部分常用材料。
+shop:
+  trades:
+    - item: OAK_LOG
+      amount: 32
+      cost: 64
+    - item: SPRUCE_LOG
+      amount: 32
+      cost: 64
+    - item: BIRCH_LOG
+      amount: 32
+      cost: 64
+    - item: JUNGLE_LOG
+      amount: 32
+      cost: 72
+    - item: ACACIA_LOG
+      amount: 32
+      cost: 72
+    - item: DARK_OAK_LOG
+      amount: 32
+      cost: 72
+    - item: MANGROVE_LOG
+      amount: 32
+      cost: 80
+    - item: CHERRY_LOG
+      amount: 32
+      cost: 80
+    - item: BAMBOO_BLOCK
+      amount: 32
+      cost: 60
+    - item: COBBLESTONE
+      amount: 64
+      cost: 48
+    - item: STONE
+      amount: 64
+      cost: 60
+    - item: DEEPSLATE
+      amount: 64
+      cost: 64
+    - item: SMOOTH_STONE
+      amount: 32
+      cost: 72
+    - item: BRICKS
+      amount: 32
+      cost: 84
+    - item: TERRACOTTA
+      amount: 32
+      cost: 90
+    - item: WHITE_CONCRETE
+      amount: 32
+      cost: 96
+    - item: GLASS
+      amount: 64
+      cost: 70
+    - item: QUARTZ_BLOCK
+      amount: 16
+      cost: 120
+    - item: GLOWSTONE
+      amount: 16
+      cost: 140
+    - item: SEA_LANTERN
+      amount: 8
+      cost: 150
+    - item: REDSTONE
+      amount: 32
+      cost: 90
+    - item: LAPIS_LAZULI
+      amount: 24
+      cost: 110
+    - item: COAL
+      amount: 32
+      cost: 85
+    - item: IRON_INGOT
+      amount: 16
+      cost: 160
+    - item: GOLD_INGOT
+      amount: 16
+      cost: 220
+    - item: COPPER_INGOT
+      amount: 24
+      cost: 150
+    - item: DIAMOND
+      amount: 8
+      cost: 420
+    - item: EMERALD
+      amount: 8
+      cost: 400
+    - item: NETHERITE_SCRAP
+      amount: 4
+      cost: 880
+    - item: STRING
+      amount: 32
+      cost: 90
+    - item: LEATHER
+      amount: 16
+      cost: 120
+    - item: FEATHER
+      amount: 32
+      cost: 80
+    - item: GUNPOWDER
+      amount: 16
+      cost: 160
+    - item: BLAZE_ROD
+      amount: 8
+      cost: 220
+    - item: ENDER_PEARL
+      amount: 8
+      cost: 200
+    - item: GHAST_TEAR
+      amount: 4
+      cost: 320
+    - item: WITHER_SKELETON_SKULL
+      amount: 1
+      cost: 1500
+    - item: SUGAR_CANE
+      amount: 32
+      cost: 70
+    - item: NETHER_WART
+      amount: 16
+      cost: 160
+    - item: WHEAT_SEEDS
+      amount: 64
+      cost: 40
+    - item: CARROT
+      amount: 32
+      cost: 60
+    - item: POTATO
+      amount: 32
+      cost: 60
+    - item: BEETROOT_SEEDS
+      amount: 32
+      cost: 50
+    - item: MELON_SEEDS
+      amount: 16
+      cost: 55
+    - item: PUMPKIN_SEEDS
+      amount: 16
+      cost: 55
+    - item: GOLDEN_CARROT
+      amount: 16
+      cost: 210
+    - item: COOKED_BEEF
+      amount: 32
+      cost: 120
+    - item: COOKED_SALMON
+      amount: 16
+      cost: 130
+    - item: BREAD
+      amount: 32
+      cost: 75
+    - item: CAKE
+      amount: 3
+      cost: 180
+    - item: EXPERIENCE_BOTTLE
+      amount: 16
+      cost: 260
+    - item: ENCHANTING_TABLE
+      amount: 1
+      cost: 480
+    - item: ANVIL
+      amount: 1
+      cost: 420
+    - item: SMITHING_TABLE
+      amount: 1
+      cost: 260
+    - item: FURNACE
+      amount: 4
+      cost: 80
+    - item: BLAST_FURNACE
+      amount: 1
+      cost: 280
+    - item: BREWING_STAND
+      amount: 1
+      cost: 220
+    - item: OBSIDIAN
+      amount: 16
+      cost: 200
+    - item: ENDER_CHEST
+      amount: 1
+      cost: 360
+    - item: SHULKER_BOX
+      amount: 1
+      cost: 420
+    - item: FIREWORK_ROCKET
+      amount: 24
+      cost: 140
+    - item: HOPPER
+      amount: 4
+      cost: 260
+    - item: CHEST
+      amount: 16
+      cost: 90
+    - item: ELYTRA
+      amount: 1
+      cost: 1800
+    - item: BEACON
+      amount: 1
+      cost: 3200
+    - item: TOTEM_OF_UNDYING
+      amount: 1
+      cost: 2600
+
+# 玩家市场配置。
+market:
+  max-listings-per-player: 8
+  listing-expiry-hours: 168
+
+# 商店范围配置。首次安装可使用 /dirtshop install 命令自动生成。
+region:
+  require-inside: false
+
+# 预置的 NPC 方便快速体验，请根据需要调整坐标与行为。
+npcs:
+  shopkeeper:
+    name: "&e泥土商贩"
+    type: VILLAGER
+    world: world
+    x: 0.5
+    y: 64.0
+    z: 0.5
+    yaw: 0.0
+    pitch: 0.0
+    behavior: SHOP
+    dialogue:
+      - "&a来看看今日的泥土特价！"
+  broker:
+    name: "&b市场经纪人"
+    type: VILLAGER
+    world: world
+    x: 5.5
+    y: 64.0
+    z: 0.5
+    yaw: 180.0
+    pitch: 0.0
+    behavior: MARKET
+    dialogue:
+      - "&f我可以帮你浏览玩家市场。"
