@@ -56,4 +56,41 @@ PrimeMcDirtShop 是一款针对 Bukkit/Spigot/Paper 1.20+ 的泥土商店插件�
 - `market-listings.yml`：存储玩家市场当前上架商品。
 - `scripts/` 目录：存放可热加载的 JavaScript 脚本，插件已附带 `sample.js` 作为扩展示例。
 
+## JavaScript 扩展开发教程
+
+PrimeMcDirtShop 使用 Nashorn 引擎执行 `plugins/PrimeMcDirtShop/scripts/` 目录下的 `.js` 文件，并在每次 `/dirtshop scripts reload` 时重新加载。【F:src/main/java/com/primemcdirtshop/dirtshop/scripting/ScriptService.java†L46-L107】以下内容帮助你快速上手：
+
+1. **准备环境**
+   - 首次启动插件会自动创建 `scripts` 目录及 `sample.js` 示例脚本。
+   - 若需在脚本中使用额外 Java 库，请确保相关 JAR 已被服务器加载（例如放入 `libs/` 并由启动脚本添加到 ClassPath），这样才能通过 `Java.type` 调用。
+
+2. **了解可用绑定**
+   - 每个脚本会获得以下变量：
+     - `library`：封装常用钩子的帮助器，可注册欢迎消息、挖掘奖励、工具装饰、NPC 互动等函数。【F:src/main/java/com/primemcdirtshop/dirtshop/scripting/DirtScriptLibrary.java†L27-L88】
+     - `plugin`：`JavaPlugin` 实例，可用于调度任务、访问数据目录等。
+     - `economy`：`DirtEconomyService`，可查询或修改玩家泥土币余额。
+     - `configuration`：`PluginConfiguration`，可读取插件的运行配置。
+
+3. **注册钩子**
+   - `library.registerWelcomeHook(player => { ... })`：玩家加入时执行，可发送消息或发放奖励。
+   - `library.registerBlockRewardModifier((player, material, reward) => { ... return reward; })`：自定义挖掘泥土时的奖励倍率或额外掉落。
+   - `library.registerToolDecorator((player, itemStack) => { ... })`：在工具加载或玩家背包刷新时追加 Lore、附魔等效果。
+   - `library.registerNpcInteractionHandler((player, npcId, entity) => { ... return handled; })`：拦截 NPC 交互事件，返回 `true` 则阻止默认逻辑。
+   - `library.onEnable(plugin => { ... })`：脚本加载后立即调用，常用于调度定时任务或缓存数据。
+
+4. **经济与工具接口**
+   - `library.economy()`/`economy` 暴露的 `getBalance`、`deposit`、`withdraw` 等方法，可直接管理玩家泥土币余额。
+   - `library.tools()` 暴露的 `applyAllModifiers(Player)` 等方法，可复用插件内置的工具强化逻辑。【F:src/main/java/com/primemcdirtshop/dirtshop/scripting/DirtScriptLibrary.java†L63-L79】
+
+5. **调试与热重载**
+   - 修改脚本后执行 `/dirtshop scripts reload` 即可热重载；插件会记录已加载脚本并输出成功或错误信息，便于定位问题。【F:src/main/java/com/primemcdirtshop/dirtshop/scripting/ScriptService.java†L69-L106】
+   - 在脚本中使用 `plugin.getLogger().info("...")` 或 `print("...")` 输出调试信息。
+
+6. **最佳实践**
+   - 使用 `try { ... } catch (e) { plugin.getLogger().log(...) }` 包裹可能抛错的逻辑，避免单个脚本影响所有钩子。
+   - 将复杂逻辑拆分为多个函数，并在脚本底部调用 `library` 注册，确保可读性。
+   - 利用示例脚本 `sample.js` 作为模板，自定义对话、奖励或工具装饰。
+
+完成以上步骤后，即可通过 JavaScript 脚本无缝扩展泥土商店的欢迎流程、经济奖励、NPC 行为以及工具强化等玩法。
+
 如需进行深度定制，可在 `src/main/java/com/primemcdirtshop/dirtshop/` 中查看 Spring Bean 定义与服务实现。欢迎根据服务器需求二次开发！
