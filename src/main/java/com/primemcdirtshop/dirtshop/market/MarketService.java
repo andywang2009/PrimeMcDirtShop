@@ -2,9 +2,10 @@ package com.primemcdirtshop.dirtshop.market;
 
 import com.primemcdirtshop.dirtshop.config.PluginConfiguration;
 import com.primemcdirtshop.dirtshop.economy.DirtEconomyService;
+import com.primemcdirtshop.dirtshop.economy.EconomyAnalyticsService;
 import com.primemcdirtshop.dirtshop.region.RegionService;
 import com.primemcdirtshop.dirtshop.storage.MarketStorage;
-import org.bukkit.Location;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -21,16 +22,19 @@ public class MarketService {
     private final MarketStorage storage;
     private final DirtEconomyService economyService;
     private final RegionService regionService;
+    private final EconomyAnalyticsService analyticsService;
     private final PluginConfiguration configuration;
 
     public MarketService(MarketStorage storage,
                          DirtEconomyService economyService,
                          RegionService regionService,
-                         PluginConfiguration configuration) {
+                         PluginConfiguration configuration,
+                         EconomyAnalyticsService analyticsService) {
         this.storage = storage;
         this.economyService = economyService;
         this.regionService = regionService;
         this.configuration = configuration;
+        this.analyticsService = analyticsService;
     }
 
     public void loadListings() {
@@ -61,7 +65,7 @@ public class MarketService {
     }
 
     public Optional<MarketListing> createListing(Player player, long price) {
-        if (!isInMarket(player.getLocation())) {
+        if (!regionService.canTrade(player)) {
             return Optional.empty();
         }
         if (!canCreateListing(player)) {
@@ -99,7 +103,7 @@ public class MarketService {
         if (optional.isEmpty()) {
             return false;
         }
-        if (!isInMarket(buyer.getLocation())) {
+        if (!regionService.canTrade(buyer)) {
             return false;
         }
         MarketListing listing = optional.get();
@@ -109,7 +113,15 @@ public class MarketService {
         if (!economyService.withdraw(buyer.getUniqueId(), listing.price())) {
             return false;
         }
-        economyService.deposit(listing.seller(), listing.price());
+        analyticsService.recordTransaction(listing.price());
+        long cut = Math.round(listing.price() * analyticsService.resolveShopkeeperCut());
+        long payout = Math.max(0, listing.price() - cut);
+        economyService.deposit(listing.seller(), payout);
+        if (cut > 0) {
+            regionService.recordZoneRevenue(buyer.getLocation(), cut);
+            buyer.sendMessage(ChatColor.GRAY + regionService.getShopkeeperName(buyer.getLocation())
+                    + " 抽取了 " + cut + " 泥土币作为场地维护。卖家实收 " + payout + "。");
+        }
         ItemStack item = listing.item().clone();
         buyer.getInventory().addItem(item).values()
                 .forEach(remaining -> buyer.getWorld().dropItemNaturally(buyer.getLocation(), remaining));
@@ -131,11 +143,8 @@ public class MarketService {
         });
     }
 
-    public boolean isInMarket(Location location) {
-        if (!regionService.isRegionRequired()) {
-            return true;
-        }
-        return regionService.isInsideRegion(location);
+    public boolean canUseMarket(Player player) {
+        return regionService.canTrade(player);
     }
 
     private void purgeExpired() {

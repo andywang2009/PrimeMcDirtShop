@@ -52,6 +52,10 @@ public class PlayerDataRepository {
         balances.put(uuid, getBalance(uuid) + delta);
     }
 
+    public synchronized long getTotalWealth() {
+        return balances.values().stream().mapToLong(Long::longValue).sum();
+    }
+
     public synchronized void flush() {
         YamlConfiguration yaml = new YamlConfiguration();
         for (Map.Entry<UUID, Long> entry : balances.entrySet()) {

@@ -1,8 +1,11 @@
 package com.primemcdirtshop.dirtshop.config;
 
+import com.primemcdirtshop.dirtshop.arsenal.ArmorDefinition;
+import com.primemcdirtshop.dirtshop.arsenal.WeaponDefinition;
 import com.primemcdirtshop.dirtshop.tools.ToolModifier;
 import com.primemcdirtshop.dirtshop.util.ShopTrade;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.enchantments.Enchantment;
@@ -25,6 +28,8 @@ public class PluginConfiguration {
     private Map<Material, ToolModifier> toolModifiers;
     private boolean applyToolModifiersOnJoin;
     private WelcomeSettings welcomeSettings;
+    private List<WeaponDefinition> weaponDefinitions;
+    private List<ArmorDefinition> armorDefinitions;
 
     public PluginConfiguration(FileConfiguration config) {
         reload(config);
@@ -37,6 +42,8 @@ public class PluginConfiguration {
         this.toolModifiers = Collections.unmodifiableMap(loadToolModifiers());
         this.applyToolModifiersOnJoin = config.getBoolean("tool-modifiers.apply-on-join", true);
         this.welcomeSettings = loadWelcomeSettings();
+        this.weaponDefinitions = Collections.unmodifiableList(loadWeaponDefinitions());
+        this.armorDefinitions = Collections.unmodifiableList(loadArmorDefinitions());
     }
 
     private Map<Material, Integer> loadBlockValues() {
@@ -155,5 +162,69 @@ public class PluginConfiguration {
 
     public WelcomeSettings getWelcomeSettings() {
         return welcomeSettings;
+    }
+
+    public List<WeaponDefinition> getWeaponDefinitions() {
+        return weaponDefinitions;
+    }
+
+    public List<ArmorDefinition> getArmorDefinitions() {
+        return armorDefinitions;
+    }
+
+    private List<WeaponDefinition> loadWeaponDefinitions() {
+        List<Map<?, ?>> raw = config.getMapList("arsenal.weapons");
+        List<WeaponDefinition> list = new ArrayList<>();
+        for (Map<?, ?> entry : raw) {
+            Object item = entry.get("item");
+            if (!(item instanceof String itemId)) {
+                continue;
+            }
+            Material material = Material.matchMaterial(itemId);
+            if (material == null) {
+                continue;
+            }
+            String id = String.valueOf(entry.getOrDefault("id", material.name().toLowerCase(Locale.ROOT)));
+            String display = String.valueOf(entry.getOrDefault("display-name", material.name()));
+            @SuppressWarnings("unchecked")
+            List<String> lore = (List<String>) entry.getOrDefault("lore", Collections.emptyList());
+            String skill = String.valueOf(entry.getOrDefault("skill", "NONE"));
+            Particle particle = parseParticle(String.valueOf(entry.getOrDefault("particle", Particle.CRIT.name())));
+            double magicCost = entry.get("magic-cost") instanceof Number number ? number.doubleValue() : 10d;
+            double bonusDamage = entry.get("bonus-damage") instanceof Number damage ? damage.doubleValue() : 3d;
+            list.add(new WeaponDefinition(id.toLowerCase(Locale.ROOT), material, display, lore, skill, particle, magicCost, bonusDamage));
+        }
+        return list;
+    }
+
+    private List<ArmorDefinition> loadArmorDefinitions() {
+        List<Map<?, ?>> raw = config.getMapList("arsenal.armors");
+        List<ArmorDefinition> list = new ArrayList<>();
+        for (Map<?, ?> entry : raw) {
+            Object item = entry.get("item");
+            if (!(item instanceof String itemId)) {
+                continue;
+            }
+            Material material = Material.matchMaterial(itemId);
+            if (material == null) {
+                continue;
+            }
+            String id = String.valueOf(entry.getOrDefault("id", material.name().toLowerCase(Locale.ROOT)));
+            String display = String.valueOf(entry.getOrDefault("display-name", material.name()));
+            @SuppressWarnings("unchecked")
+            List<String> lore = (List<String>) entry.getOrDefault("lore", Collections.emptyList());
+            double defense = entry.get("defense-bonus") instanceof Number number ? number.doubleValue() : 1.5d;
+            Particle particle = parseParticle(String.valueOf(entry.getOrDefault("particle", Particle.SPELL_MOB.name())));
+            list.add(new ArmorDefinition(id.toLowerCase(Locale.ROOT), material, display, lore, defense, particle));
+        }
+        return list;
+    }
+
+    private Particle parseParticle(String name) {
+        try {
+            return Particle.valueOf(name.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            return Particle.CRIT;
+        }
     }
 }

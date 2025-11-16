@@ -1,11 +1,17 @@
 package com.primemcdirtshop.dirtshop.commands;
 
 import com.primemcdirtshop.dirtshop.economy.DirtEconomyService;
+import com.primemcdirtshop.dirtshop.arsenal.ArmorDefinition;
+import com.primemcdirtshop.dirtshop.arsenal.WeaponDefinition;
+import com.primemcdirtshop.dirtshop.arsenal.WeaponService;
 import com.primemcdirtshop.dirtshop.market.MarketListing;
 import com.primemcdirtshop.dirtshop.market.MarketService;
 import com.primemcdirtshop.dirtshop.npc.NpcBehavior;
 import com.primemcdirtshop.dirtshop.npc.NpcDefinition;
 import com.primemcdirtshop.dirtshop.npc.NpcService;
+import com.primemcdirtshop.dirtshop.progression.PlayerStats;
+import com.primemcdirtshop.dirtshop.progression.PlayerStatsService;
+import com.primemcdirtshop.dirtshop.progression.StatType;
 import com.primemcdirtshop.dirtshop.region.RegionService;
 import com.primemcdirtshop.dirtshop.scripting.ScriptService;
 import com.primemcdirtshop.dirtshop.tools.ToolModificationService;
@@ -35,6 +41,8 @@ public class DirtShopCommand implements CommandExecutor, TabCompleter {
     private final NpcService npcService;
     private final ScriptService scriptService;
     private final ToolModificationService toolModificationService;
+    private final PlayerStatsService statsService;
+    private final WeaponService weaponService;
 
     public DirtShopCommand(DirtEconomyService economyService,
                            MarketService marketService,
@@ -42,7 +50,9 @@ public class DirtShopCommand implements CommandExecutor, TabCompleter {
                            RegionService regionService,
                            NpcService npcService,
                            ScriptService scriptService,
-                           ToolModificationService toolModificationService) {
+                           ToolModificationService toolModificationService,
+                           PlayerStatsService statsService,
+                           WeaponService weaponService) {
         this.economyService = economyService;
         this.marketService = marketService;
         this.shopService = shopService;
@@ -50,6 +60,8 @@ public class DirtShopCommand implements CommandExecutor, TabCompleter {
         this.npcService = npcService;
         this.scriptService = scriptService;
         this.toolModificationService = toolModificationService;
+        this.statsService = statsService;
+        this.weaponService = weaponService;
     }
 
     @Override
@@ -72,6 +84,8 @@ public class DirtShopCommand implements CommandExecutor, TabCompleter {
             case "npc" -> handleNpc(player, args);
             case "scripts" -> handleScripts(player, args);
             case "tools" -> handleTools(player);
+            case "stats" -> handleStats(player);
+            case "arsenal" -> handleArsenal(player, args);
             default -> {
                 sendHelp(player);
                 yield true;
@@ -97,7 +111,7 @@ public class DirtShopCommand implements CommandExecutor, TabCompleter {
         }
         switch (args[1].toLowerCase(Locale.ROOT)) {
             case "browse" -> {
-                if (!marketService.isInMarket(player.getLocation())) {
+                if (!marketService.canUseMarket(player)) {
                     player.sendMessage(ChatColor.RED + "请在泥土商店范围内浏览市场。");
                     return true;
                 }
@@ -121,7 +135,7 @@ public class DirtShopCommand implements CommandExecutor, TabCompleter {
                     player.sendMessage(ChatColor.RED + "用法: /dirtshop market list <价格>");
                     return true;
                 }
-                if (!marketService.isInMarket(player.getLocation())) {
+                if (!marketService.canUseMarket(player)) {
                     player.sendMessage(ChatColor.RED + "请在泥土商店范围内上架物品。");
                     return true;
                 }
@@ -151,7 +165,7 @@ public class DirtShopCommand implements CommandExecutor, TabCompleter {
                     player.sendMessage(ChatColor.RED + "用法: /dirtshop market buy <编号>");
                     return true;
                 }
-                if (!marketService.isInMarket(player.getLocation())) {
+                if (!marketService.canUseMarket(player)) {
                     player.sendMessage(ChatColor.RED + "请在泥土商店范围内购买。");
                     return true;
                 }
@@ -172,7 +186,7 @@ public class DirtShopCommand implements CommandExecutor, TabCompleter {
                     player.sendMessage(ChatColor.RED + "用法: /dirtshop market cancel <编号>");
                     return true;
                 }
-                if (!marketService.isInMarket(player.getLocation())) {
+                if (!marketService.canUseMarket(player)) {
                     player.sendMessage(ChatColor.RED + "请在泥土商店范围内撤销上架。");
                     return true;
                 }
@@ -198,7 +212,7 @@ public class DirtShopCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         if (args.length < 2) {
-            player.sendMessage(ChatColor.YELLOW + "用法: /dirtshop region <set|require|info> ...");
+            player.sendMessage(ChatColor.YELLOW + "用法: /dirtshop region <set|require|info|random|zones> ...");
             return true;
         }
         switch (args[1].toLowerCase(Locale.ROOT)) {
@@ -244,8 +258,31 @@ public class DirtShopCommand implements CommandExecutor, TabCompleter {
                 }, () -> player.sendMessage(ChatColor.RED + "尚未设置商店范围。"));
                 return true;
             }
+            case "random" -> {
+                regionService.createRandomZone().ifPresentOrElse(zone -> {
+                    player.sendMessage(ChatColor.GREEN + "已生成新的交易区域 " + zone.getId()
+                            + " @ " + zone.getCenter().getWorld().getName()
+                            + " (" + zone.getCenter().getBlockX() + ", " + zone.getCenter().getBlockY()
+                            + ", " + zone.getCenter().getBlockZ() + ")");
+                }, () -> player.sendMessage(ChatColor.RED + "无法生成随机区域，请检查 region.generator 配置。"));
+                return true;
+            }
+            case "zones" -> {
+                player.sendMessage(ChatColor.YELLOW + "======= 动态交易区域 =======");
+                if (regionService.listZones().isEmpty()) {
+                    player.sendMessage(ChatColor.GRAY + "当前没有动态区域，使用 /dirtshop region random 创建。");
+                } else {
+                    regionService.listZones().forEach(zone -> player.sendMessage(ChatColor.GOLD + zone.getId()
+                            + ChatColor.WHITE + " - " + zone.getShopkeeper()
+                            + ChatColor.GRAY + " @ " + zone.getCenter().getWorld().getName()
+                            + " (" + zone.getCenter().getBlockX() + "," + zone.getCenter().getBlockY()
+                            + "," + zone.getCenter().getBlockZ() + ") 收益 "
+                            + String.format(Locale.ROOT, "%.0f", zone.getEarnings())));
+                }
+                return true;
+            }
             default -> {
-                player.sendMessage(ChatColor.YELLOW + "用法: /dirtshop region <set|require|info>");
+                player.sendMessage(ChatColor.YELLOW + "用法: /dirtshop region <set|require|info|random|zones>");
                 return true;
             }
         }
@@ -469,6 +506,61 @@ public class DirtShopCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    private boolean handleStats(Player player) {
+        PlayerStats stats = statsService.get(player);
+        player.sendMessage(ChatColor.YELLOW + "======= 人物属性 =======");
+        for (StatType type : StatType.values()) {
+            player.sendMessage(ChatColor.GOLD + type.name() + ChatColor.WHITE + " 经验: "
+                    + stats.getExperience(type) + " (等级 " + stats.getLevel(type) + ")");
+        }
+        player.sendMessage(ChatColor.AQUA + "当前魔力: " + statsService.getMagic(player));
+        return true;
+    }
+
+    private boolean handleArsenal(Player player, String[] args) {
+        if (args.length < 2) {
+            player.sendMessage(ChatColor.YELLOW + "用法: /dirtshop arsenal <list|give>");
+            return true;
+        }
+        String sub = args[1].toLowerCase(Locale.ROOT);
+        switch (sub) {
+            case "list" -> {
+                player.sendMessage(ChatColor.YELLOW + "======= 武器库 =======");
+                weaponService.getWeapons().forEach(def -> player.sendMessage(ChatColor.GOLD + def.id()
+                        + ChatColor.WHITE + " -> " + def.displayName() + ChatColor.GRAY + " 技能: " + def.skill()));
+                player.sendMessage(ChatColor.YELLOW + "======= 护甲库 =======");
+                weaponService.getArmors().forEach(def -> player.sendMessage(ChatColor.GOLD + def.id()
+                        + ChatColor.WHITE + " -> " + def.displayName()));
+                return true;
+            }
+            case "give" -> {
+                if (!player.hasPermission("dirtshop.admin")) {
+                    player.sendMessage(ChatColor.RED + "你没有权限发放武器。");
+                    return true;
+                }
+                if (args.length < 4) {
+                    player.sendMessage(ChatColor.RED + "用法: /dirtshop arsenal give <weapon|armor> <id>");
+                    return true;
+                }
+                String type = args[2].toLowerCase(Locale.ROOT);
+                String id = args[3].toLowerCase(Locale.ROOT);
+                boolean result = type.equals("weapon")
+                        ? weaponService.giveWeapon(player, id)
+                        : weaponService.giveArmor(player, id);
+                if (result) {
+                    player.sendMessage(ChatColor.GREEN + "已发放 " + id + "。");
+                } else {
+                    player.sendMessage(ChatColor.RED + "未找到对应的武器或护甲。");
+                }
+                return true;
+            }
+            default -> {
+                player.sendMessage(ChatColor.YELLOW + "用法: /dirtshop arsenal <list|give>");
+                return true;
+            }
+        }
+    }
+
     private void sendHelp(Player player) {
         player.sendMessage(ChatColor.YELLOW + "======= 泥土商店 =======");
         player.sendMessage(ChatColor.GOLD + "/dirtshop balance" + ChatColor.WHITE + " - 查看泥土币余额");
@@ -477,6 +569,8 @@ public class DirtShopCommand implements CommandExecutor, TabCompleter {
         player.sendMessage(ChatColor.GOLD + "/dirtshop market list <价格>" + ChatColor.WHITE + " - 上架手中物品");
         player.sendMessage(ChatColor.GOLD + "/dirtshop market buy <编号>" + ChatColor.WHITE + " - 购买玩家市场物品");
         player.sendMessage(ChatColor.GOLD + "/dirtshop install [半径]" + ChatColor.WHITE + " - (管理员) 初始化商店范围");
+        player.sendMessage(ChatColor.GOLD + "/dirtshop stats" + ChatColor.WHITE + " - 查看属性成长");
+        player.sendMessage(ChatColor.GOLD + "/dirtshop arsenal" + ChatColor.WHITE + " - 查看武器库");
         if (player.hasPermission("dirtshop.admin")) {
             player.sendMessage(ChatColor.GOLD + "/dirtshop npc" + ChatColor.WHITE + " - 管理商店 NPC");
             player.sendMessage(ChatColor.GOLD + "/dirtshop scripts" + ChatColor.WHITE + " - 管理外部脚本");
@@ -515,6 +609,8 @@ public class DirtShopCommand implements CommandExecutor, TabCompleter {
             completions.add("shop");
             completions.add("market");
             completions.add("tools");
+            completions.add("stats");
+            completions.add("arsenal");
             if (sender.hasPermission("dirtshop.admin")) {
                 completions.add("region");
                 completions.add("install");
@@ -534,6 +630,13 @@ public class DirtShopCommand implements CommandExecutor, TabCompleter {
             completions.add("set");
             completions.add("require");
             completions.add("info");
+            completions.add("random");
+            completions.add("zones");
+            return completions;
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("arsenal")) {
+            completions.add("list");
+            completions.add("give");
             return completions;
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("npc") && sender.hasPermission("dirtshop.admin")) {
@@ -577,6 +680,19 @@ public class DirtShopCommand implements CommandExecutor, TabCompleter {
         if (args.length == 3 && args[0].equalsIgnoreCase("region") && args[1].equalsIgnoreCase("require")) {
             completions.add("true");
             completions.add("false");
+            return completions;
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("arsenal") && args[1].equalsIgnoreCase("give")) {
+            completions.add("weapon");
+            completions.add("armor");
+            return completions;
+        }
+        if (args.length == 4 && args[0].equalsIgnoreCase("arsenal") && args[1].equalsIgnoreCase("give")) {
+            if (args[2].equalsIgnoreCase("weapon")) {
+                completions.addAll(weaponService.getWeapons().stream().map(WeaponDefinition::id).toList());
+            } else {
+                completions.addAll(weaponService.getArmors().stream().map(ArmorDefinition::id).toList());
+            }
             return completions;
         }
         return completions;

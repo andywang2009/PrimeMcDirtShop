@@ -2,6 +2,9 @@ package com.primemcdirtshop.dirtshop.util;
 
 import com.primemcdirtshop.dirtshop.config.PluginConfiguration;
 import com.primemcdirtshop.dirtshop.economy.DirtEconomyService;
+import com.primemcdirtshop.dirtshop.economy.EconomyAnalyticsService;
+import com.primemcdirtshop.dirtshop.progression.PlayerStatsService;
+import com.primemcdirtshop.dirtshop.progression.StatType;
 import com.primemcdirtshop.dirtshop.region.RegionService;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -21,17 +24,23 @@ public class ShopService {
     private final PluginConfiguration configuration;
     private final DirtEconomyService economyService;
     private final RegionService regionService;
+    private final EconomyAnalyticsService analyticsService;
+    private final PlayerStatsService statsService;
 
     public ShopService(PluginConfiguration configuration,
                        DirtEconomyService economyService,
-                       RegionService regionService) {
+                       RegionService regionService,
+                       EconomyAnalyticsService analyticsService,
+                       PlayerStatsService statsService) {
         this.configuration = configuration;
         this.economyService = economyService;
         this.regionService = regionService;
+        this.analyticsService = analyticsService;
+        this.statsService = statsService;
     }
 
     public void openShop(Player player) {
-        if (regionService.isRegionRequired() && !regionService.isInsideRegion(player.getLocation())) {
+        if (!regionService.canTrade(player)) {
             player.sendMessage(ChatColor.RED + "你必须在泥土商店范围内才能交易。");
             return;
         }
@@ -85,13 +94,21 @@ public class ShopService {
     }
 
     public boolean buy(Player player, ShopTrade trade) {
-        if (regionService.isRegionRequired() && !regionService.isInsideRegion(player.getLocation())) {
+        if (!regionService.canTrade(player)) {
             player.sendMessage(ChatColor.RED + "你必须在泥土商店范围内才能交易。");
             return false;
         }
-        if (!economyService.withdraw(player.getUniqueId(), trade.cost())) {
+        long cost = analyticsService.applyMarketMultiplier(trade.cost());
+        if (!economyService.withdraw(player.getUniqueId(), cost)) {
             player.sendMessage(ChatColor.RED + "泥土币不足!");
             return false;
+        }
+        analyticsService.recordTransaction(cost);
+        long cut = Math.round(cost * analyticsService.resolveShopkeeperCut());
+        if (cut > 0) {
+            regionService.recordZoneRevenue(player.getLocation(), cut);
+            player.sendMessage(ChatColor.GRAY + regionService.getShopkeeperName(player.getLocation())
+                    + " 抽取了 " + cut + " 泥土币作为维护费用。");
         }
         ItemStack stack = new ItemStack(trade.material());
         stack.setAmount(trade.amount());
@@ -99,8 +116,16 @@ public class ShopService {
         if (!leftover.isEmpty()) {
             leftover.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
         }
-        player.sendMessage(ChatColor.GREEN + "购买成功，花费 " + trade.cost() + " 泥土币。");
+        if (isArmor(trade.material())) {
+            statsService.addExperience(player, StatType.DEFENSE, (int) Math.max(1, cost / 5));
+        }
+        player.sendMessage(ChatColor.GREEN + "购买成功，花费 " + cost + " 泥土币。");
         return true;
+    }
+
+    private boolean isArmor(Material material) {
+        return material.name().endsWith("HELMET") || material.name().endsWith("CHESTPLATE")
+                || material.name().endsWith("LEGGINGS") || material.name().endsWith("BOOTS");
     }
 
     public long getBalance(Player player) {

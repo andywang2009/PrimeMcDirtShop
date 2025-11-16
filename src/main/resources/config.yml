@@ -293,7 +293,93 @@ market:
 
 # 商店范围配置。首次安装可使用 /dirtshop install 命令自动生成。
 region:
+  world: world
+  center:
+    x: 0.5
+    y: 64.0
+    z: 0.5
+  radius: 20
   require-inside: false
+  shopkeeper: "&6中央泥土总管"
+  main-earnings: 0
+  generator:
+    world: world
+    origin:
+      x: 0
+      z: 0
+    min-distance: 120
+    max-distance: 640
+    min-radius: 12
+    max-radius: 28
+    attempts: 24
+    safe-y-min: 60
+    safe-y-max: 120
+    shopkeepers:
+      - "&e巡回商贩"
+      - "&b黑市老板"
+      - "&d魔法旅人"
+  dynamic-zones: {}
+
+arsenal:
+  weapons:
+    - id: earth_hammer
+      item: NETHERITE_AXE
+      display-name: "&6大地战锤"
+      lore:
+        - "&7旋风技能：清理大范围怪物"
+      skill: WHIRLWIND
+      particle: SWEEP_ATTACK
+      magic-cost: 25
+      bonus-damage: 6
+    - id: arcane_staff
+      item: BLAZE_ROD
+      display-name: "&d秘法法杖"
+      lore:
+        - "&7右键释放奥术冲击"
+      skill: ARCANE_BURST
+      particle: END_ROD
+      magic-cost: 18
+      bonus-damage: 4
+    - id: sniper_longbow
+      item: BOW
+      display-name: "&b神射长弓"
+      lore:
+        - "&7激活 SNIPER_FOCUS 增强射击"
+      skill: SNIPER_FOCUS
+      particle: CRIT_MAGIC
+      magic-cost: 0
+      bonus-damage: 2
+    - id: farmer_scythe
+      item: IRON_HOE
+      display-name: "&a农神镰刀"
+      lore:
+        - "&7额外农业经验奖励"
+      skill: WHIRLWIND
+      particle: VILLAGER_HAPPY
+      magic-cost: 10
+      bonus-damage: 3
+  armors:
+    - id: guardian_plate
+      item: NETHERITE_CHESTPLATE
+      display-name: "&6守护者胸甲"
+      lore:
+        - "&7提高防御并释放护盾粒子"
+      defense-bonus: 3.5
+      particle: SPELL_WITCH
+    - id: ranger_cloak
+      item: LEATHER_CHESTPLATE
+      display-name: "&2荒野游侠斗篷"
+      lore:
+        - "&7弓箭命中更稳定"
+      defense-bonus: 1.5
+      particle: TOTEM
+    - id: mage_crown
+      item: GOLDEN_HELMET
+      display-name: "&d奥术王冠"
+      lore:
+        - "&7提高魔法上限"
+      defense-bonus: 1.0
+      particle: ENCHANTMENT_TABLE
 
 # 预置的 NPC 方便快速体验，请根据需要调整坐标与行为。
 npcs:
