@@ -1,0 +1,15 @@
+name: PrimeMcDirtShop
+main: com.primemcdirtshop.dirtshop.PrimeMcDirtShopPlugin
+version: 1.0.0
+author: PrimeMcDirtShop Team
+description: 泥土商店服务器插件，支持高版本、NPC、脚本扩展与 Spring 管理。
+api-version: 1.20
+commands:
+  dirtshop:
+    description: 打开泥土商店、玩家市场以及管理商店区域。
+    usage: /dirtshop
+    aliases: [pmshop]
+permissions:
+  dirtshop.admin:
+    description: 允许配置商店区域、管理 NPC、脚本与高级设置。
+    default: op
